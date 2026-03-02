@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy:github": "next build && rm -rf ../docs && mv out ../docs"
   },
   "dependencies": {
     "next": "16.1.6",
