@@ -704,6 +704,78 @@ function LandingPage({ onNavigate }) {
         </button>
       </div>
 
+    <section style="background:#f4f6f9; padding:70px 20px; border-top:1px solid #ddd;">
+      <div style="max-width:1100px; margin:0 auto; font-family:Arial, Helvetica, sans-serif; color:#333;">
+          
+          <div style="text-align:center; margin-bottom:50px;">
+              <h2 style="margin:0; font-size:32px; font-weight:700;">MoMoney</h2>
+              <p style="margin-top:10px; font-size:18px; color:#666;">
+                  AI-Powered Financial Automation Solution
+              </p>
+          </div>
+
+          <div style="display:flex; flex-wrap:wrap; gap:40px; margin-bottom:50px;">
+              
+              <div style="flex:1; min-width:300px;">
+                  <h3 style="font-size:20px; margin-bottom:15px; border-bottom:2px solid #222; display:inline-block; padding-bottom:5px;">
+                      Project Information
+                  </h3>
+                  <p><strong>Project:</strong> Senior Project TI</p>
+                  <p><strong>Product Type:</strong> Financial Technology</p>
+                  <p style="margin-bottom:5px;"><strong>Institution:</strong></p>
+                  <p style="margin:0;">Departemen Teknologi Elektro dan Teknologi Informasi</p>
+                  <p style="margin:0;">Fakultas Teknik</p>
+                  <p style="margin:0;">Universitas Gadjah Mada</p>
+              </div>
+
+              <div style="flex:1; min-width:300px;">
+                  <h3 style="font-size:20px; margin-bottom:15px; border-bottom:2px solid #222; display:inline-block; padding-bottom:5px;">
+                      Team Members
+                  </h3>
+                  <ul style="padding-left:20px; line-height:1.8;">
+                      <li>Polikarpus Arya Pradhanika — 512404</li>
+                      <li>Gabriele Ghea De Palma — 512218</li>
+                      <li>Azfanova Sammy Rafif Saputra — 521764</li>
+                  </ul>
+              </div>
+
+          </div>
+
+          <div style="margin-bottom:50px;">
+              <h3 style="font-size:20px; margin-bottom:15px; border-bottom:2px solid #222; display:inline-block; padding-bottom:5px;">
+                  Background & Problem
+              </h3>
+              <p style="text-align:justify; line-height:1.8; color:#555;">
+                  Di era transformasi digital, kecepatan pengolahan data menjadi kunci utama dalam menjaga akurasi laporan keuangan perusahaan.
+                  Namun, banyak organisasi masih terjebak dalam metode administrasi tradisional yang mengandalkan pemrosesan bukti transaksi secara manual.
+                  Fragmentasi antara transaksi lapangan dengan sistem akuntansi pusat seringkali menciptakan keterlambatan pelaporan.
+                  Tanpa adanya sistem yang mampu menjembatani jeda waktu tersebut, perusahaan berisiko mengalami ketidakakuratan data kas (settlement)
+                  yang dapat menghambat proses pengambilan keputusan strategis.
+              </p>
+          </div>
+
+          <div>
+              <h3 style="font-size:20px; margin-bottom:15px; border-bottom:2px solid #222; display:inline-block; padding-bottom:5px;">
+                  Proposed Solution
+              </h3>
+              <ul style="padding-left:20px; line-height:1.8; color:#555;">
+                  <li>Aplikasi berbasis AI untuk mengintegrasikan bukti transaksi fisik ke sistem pelaporan perusahaan secara instan.</li>
+                  <li>AI memindai dan mengonversi ribuan nota menjadi format digital siap integrasi.</li>
+                  <li>Validasi otomatis untuk mendeteksi duplikasi serta ketidaksesuaian nilai pajak dan diskon.</li>
+                  <li>Sinkronisasi langsung ke database pusat mempercepat proses tutup buku dari hitungan hari menjadi hitungan jam.</li>
+                  <li>Digitalisasi bukti transaksi memastikan arsip tersusun sistematis untuk mempermudah audit internal maupun eksternal.</li>
+              </ul>
+          </div>
+          
+          <div>
+            <img src="/images/modul1.1.jpeg" alt="modul1.1" width="200" />
+            <img src="/images/modul1.2.jpeg" alt="modul1.2" width="200" />
+            <img src="/images/modul1.3.jpeg" alt="modul1.3" width="200" />
+          </div>
+      </div>
+
+    </section>
+
       <div className="footer">
         <div className="navbar-logo">
           <div className="logo-mark" style={{ width: 24, height: 24 }}><Icon d={Icons.scan} size={12} stroke={2} /></div>
