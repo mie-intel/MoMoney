@@ -1,0 +1,4 @@
+.env*
+client_secret*
+.pytest_cache/
+__pycache__/

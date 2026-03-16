@@ -26,8 +26,8 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MoMoney – Turn receipts into spreadsheets",
-  description: "Upload any receipt image and AI extracts every detail into clean, organized spreadsheets.",
+  title: "MoMoney",
+  description: "MoMoney merupakan aplikasi web yang berfasilitas AI untuk meng-summary nota menjadi spreadsheet pengeluaran uang",
 };
 
 export default function RootLayout({
