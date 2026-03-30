@@ -13,22 +13,23 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const dmSans = DM_Sans({ 
-  subsets: ["latin"], 
-  variable: "--font-sans", 
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
   display: "swap",
 });
 
-const dmMono = DM_Mono({ 
-  subsets: ["latin"], 
-  weight: ["400", "500"], 
-  variable: "--font-mono", 
-  display: "swap", 
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "MoMoney",
-  description: "MoMoney merupakan aplikasi web yang berfasilitas AI untuk meng-summary nota menjadi invoice pengeluaran uang",
+  description:
+    "MoMoney is an AI-powered web app that summarizes receipts into expense invoices.",
 };
 
 export default function RootLayout({
@@ -38,12 +39,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${dmSans.variable} ${dmMono.variable} antialiased`}
-      >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body className={`${dmSans.variable} ${dmMono.variable} antialiased`}>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

@@ -37,8 +37,8 @@ export default function CreateGroupModal({ open, onClose }: Props) {
     e.preventDefault();
     if (!name.trim()) return;
     const filtered = columns.map((c) => c.trim()).filter(Boolean);
-    // "Nilai" is always appended as the last column
-    const finalColumns = [...filtered, "Nilai"];
+    // "Price" is always appended as the last column
+    const finalColumns = [...filtered, "Price"];
     setLoading(true);
     setError(null);
     try {
@@ -123,7 +123,7 @@ export default function CreateGroupModal({ open, onClose }: Props) {
                 </div>
               ))}
             </div>
-            {/* Fixed "Nilai" column — always last, not removable */}
+            {/* Fixed "Price" column — always last, not removable */}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-[11px] text-slate-400 w-5 flex-shrink-0 text-right">
                 {columns.length + 1}.
