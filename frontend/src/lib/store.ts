@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { User, InvoiceSummary, Invoice, AIPreviewData, UploadPhase } from "@/types";
+import { User, InvoiceSummary, Invoice, AIPreviewData, UploadPhase, Group } from "@/types";
 
 interface AppStore {
   // Auth
@@ -9,6 +9,12 @@ interface AppStore {
   setUser: (u: User | null) => void;
   setToken: (t: string | null) => void;
   logout: () => void;
+
+  // Groups
+  groups: Group[];
+  setGroups: (groups: Group[]) => void;
+  addGroup: (group: Group) => void;
+  removeGroup: (id: number) => void;
 
   // Invoices
   invoices: InvoiceSummary[];
@@ -59,6 +65,12 @@ export const useStore = create<AppStore>()(
         if (typeof window !== "undefined") localStorage.removeItem("auth_token");
         set({ user: null, token: null });
       },
+
+      // Groups
+      groups: [],
+      setGroups: (groups) => set({ groups }),
+      addGroup: (group) => set((st) => ({ groups: [group, ...st.groups] })),
+      removeGroup: (id) => set((st) => ({ groups: st.groups.filter((g) => g.id !== id) })),
 
       // Invoices
       invoices: [],
