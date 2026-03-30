@@ -12,13 +12,14 @@ import CreateGroupModal from "@/components/modals/CreateGroupModal";
 export default function DashboardPage() {
   const router = useRouter();
   const pathname = usePathname();
-  console.log("PATHNAME", pathname);
   const { user, groups, setGroups, removeGroup, setUser } = useStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState<number | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(!user);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -28,12 +29,10 @@ export default function DashboardPage() {
 
     const timer = setTimeout(async () => {
       try {
-        console.log("INIT CALL", process.env.NEXT_PUBLIC_API_URL);
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/users/`,
           { credentials: "include" },
         );
-        console.log("RESPONSE", response);
         if (response.ok) {
           const data = await response.json();
           const userData = data.user || data;
@@ -90,18 +89,20 @@ export default function DashboardPage() {
     };
   }, [user, isAuthChecking]);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this group? This cannot be undone.")) return;
+  const handleDeleteConfirmed = async () => {
+    if (confirmDeleteId === null) return;
+    setDeleting(true);
     try {
-      await groupsApi.remove(id);
-      removeGroup(id);
+      await groupsApi.remove(confirmDeleteId);
+      removeGroup(confirmDeleteId);
     } catch {
       alert("Failed to delete group.");
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteId(null);
+      setMenuOpen(null);
     }
-    setMenuOpen(null);
   };
-
-  console.log("RENDER", { groups, loading, error });
 
   return (
     <AppShell>
@@ -175,7 +176,10 @@ export default function DashboardPage() {
                 onMenuToggle={() =>
                   setMenuOpen(menuOpen === group.id ? null : group.id)
                 }
-                onDelete={() => handleDelete(group.id)}
+                onDelete={() => {
+                  setMenuOpen(null);
+                  setConfirmDeleteId(group.id);
+                }}
                 style={{ animationDelay: `${idx * 0.04}s` }}
               />
             ))}
@@ -187,6 +191,52 @@ export default function DashboardPage() {
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
       />
+
+      {/* Delete confirmation modal */}
+      {confirmDeleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => !deleting && setConfirmDeleteId(null)}
+          />
+          <div className="relative bg-white rounded-2xl w-full max-w-sm shadow-xl border border-slate-200 p-6">
+            <div className="w-11 h-11 bg-red-50 rounded-xl flex items-center justify-center mb-4">
+              <Icon name="trash" size={20} className="text-red-500" />
+            </div>
+            <h2 className="text-[15px] font-bold text-slate-900 mb-1">
+              Delete group?
+            </h2>
+            <p className="text-[13px] text-slate-500 mb-6">
+              Group{" "}
+              <span className="font-semibold text-slate-700">
+                {groups.find((g) => g.id === confirmDeleteId)?.name}
+              </span>{" "}
+              will be permanently deleted and cannot be recovered.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirmed}
+                disabled={deleting}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[13px] font-semibold transition-colors disabled:opacity-50"
+              >
+                {deleting ? (
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Icon name="trash" size={13} />
+                )}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
@@ -222,7 +272,7 @@ function GroupCard({
         <div className="relative" onClick={(e) => e.stopPropagation()}>
           <button
             onClick={onMenuToggle}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition-colors opacity-0 group-hover:opacity-100"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors"
           >
             <span className="text-lg leading-none tracking-widest">···</span>
           </button>
