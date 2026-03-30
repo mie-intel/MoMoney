@@ -1,89 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { invoicesApi } from "@/lib/api";
-import { InvoiceSummary } from "@/types";
+import { groupsApi } from "@/lib/api";
+import { Group } from "@/types";
 import AppShell from "@/components/layout/Appshell";
 import Icon from "@/components/ui/Icon";
+import CreateGroupModal from "@/components/modals/CreateGroupModal";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, invoices, setInvoices, removeInvoice, setUser } = useStore();
+  const pathname = usePathname();
+  console.log("PATHNAME", pathname);
+  const { user, groups, setGroups, removeGroup, setUser } = useStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [menuOpen, setMenuOpen] = useState<number | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(!user);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
-    // Wait a bit for AuthProvider to restore session, then verify auth
+    if (user) {
+      setIsAuthChecking(false);
+      return;
+    }
+
     const timer = setTimeout(async () => {
-      if (!user) {
-        // Try to restore auth from session
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/users/`, {
-            credentials: "include",
-          });
-          if (response.ok) {
-            const data = await response.json();
-            const userData = data.user || data;
-            if (userData?.email) {
-              setUser(userData);
-              setIsAuthChecking(false);
-              return;
-            }
+      try {
+        console.log("INIT CALL", process.env.NEXT_PUBLIC_API_URL);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/users/`,
+          { credentials: "include" },
+        );
+        console.log("RESPONSE", response);
+        if (response.ok) {
+          const data = await response.json();
+          const userData = data.user || data;
+          if (userData?.email) {
+            setUser(userData);
+            setIsAuthChecking(false);
+            return;
           }
-        } catch (err) {
-          console.error("Failed to restore auth:", err);
         }
-        // No auth, redirect to login
-        router.replace("/login");
-      } else {
-        setIsAuthChecking(false);
+      } catch (err) {
+        console.error("Failed to restore auth:", err);
       }
+      router.replace("/login");
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [user, router, setUser]);
+  }, [user, pathname, setUser]);
 
   useEffect(() => {
-    if (isAuthChecking) {
-      return; // Wait for auth check
-    }
+    if (isAuthChecking || !user) return;
 
-    // Load invoices once we know user is authenticated
-    if (user) {
-      invoicesApi.list()
-        .then((invoices) => {
-          // Transform backend InvoiceRead to InvoiceSummary
-          const summaries = invoices.map((inv) => ({
-            id: String(inv.id),
-            name: inv.data?.name || `Invoice #${inv.id}`,
-            description: inv.data?.description,
-            rowCount: 0,
-            columnCount: 0,
-            createdAt: inv.created_at,
-            updatedAt: inv.created_at,
-          }));
-          setInvoices(summaries);
-        })
-        .catch((err) => {
-          console.error("Failed to load invoices:", err);
-          setError("Failed to load invoices.");
-        })
+    const fetchGroups = () => {
+      groupsApi
+        .list()
+        .then(setGroups)
+        .catch(() => setError("Failed to load groups."))
         .finally(() => setLoading(false));
-    }
-  }, [user, isAuthChecking, setInvoices]);
+    };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this invoice? This cannot be undone.")) return;
+    fetchGroups();
+
+    // bfcache restore: Chrome freezes the entire page on navigate-away.
+    // JS doesn't re-run, React doesn't remount — pageshow(persisted=true)
+    // is the only reliable hook back in.
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) fetchGroups();
+    };
+    // Tab-switch / window focus
+    const onVisible = () => {
+      if (!document.hidden) fetchGroups();
+    };
+    // SPA back-navigation when Next.js router cache serves the component
+    // without remounting (popstate fires before the route actually changes)
+    const onPopState = () => fetchGroups();
+
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("popstate", onPopState);
+
+    return () => {
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [user, isAuthChecking]);
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this group? This cannot be undone.")) return;
     try {
-      await invoicesApi.delete(id);
-      removeInvoice(id);
-    } catch { alert("Failed to delete."); }
+      await groupsApi.remove(id);
+      removeGroup(id);
+    } catch {
+      alert("Failed to delete group.");
+    }
     setMenuOpen(null);
   };
+
+  console.log("RENDER", { groups, loading, error });
 
   return (
     <AppShell>
@@ -91,11 +109,20 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">Dashboard</h1>
+            <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">
+              Dashboard
+            </h1>
             <p className="text-[13px] text-slate-400 mt-1">
-              {invoices.length} invoice{invoices.length !== 1 ? "s" : ""}
+              {groups.length} group{groups.length !== 1 ? "s" : ""}
             </p>
           </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-semibold transition-colors shadow-sm"
+          >
+            <Icon name="plus" size={14} />
+            New Group
+          </button>
         </div>
 
         {/* Content */}
@@ -106,44 +133,82 @@ export default function DashboardPage() {
         ) : error ? (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-8 text-center">
             <p className="text-[13px] text-red-600 mb-3">{error}</p>
-            <button onClick={() => window.location.reload()} className="text-[13px] text-red-700 underline">Retry</button>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-[13px] text-red-700 underline"
+            >
+              Retry
+            </button>
           </div>
-        ) : invoices.length === 0 ? (
+        ) : groups.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center shadow-sm">
             <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Icon name="fileText" size={24} stroke={1.5} className="text-slate-400" />
+              <Icon
+                name="folder"
+                size={24}
+                stroke={1.5}
+                className="text-slate-400"
+              />
             </div>
-            <h3 className="text-[15px] font-bold text-slate-700 mb-2">No invoices yet</h3>
-            <p className="text-[13px] text-slate-400 mb-6">Create your first invoice to start organizing receipt data.</p>
+            <h3 className="text-[15px] font-bold text-slate-700 mb-2">
+              No groups yet
+            </h3>
+            <p className="text-[13px] text-slate-400 mb-6">
+              Create a group to start organizing your receipts.
+            </p>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[13px] font-semibold transition-colors"
+            >
+              <Icon name="plus" size={14} />
+              New Group
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {invoices.map((sheet: InvoiceSummary, idx: number) => (
-              <InvoiceCard
-                key={sheet.id}
-                invoice={sheet}
-                menuOpen={menuOpen === sheet.id}
-                onOpen={() => router.push(`/invoice/${sheet.id}`)}
-                onMenuToggle={() => setMenuOpen(menuOpen === sheet.id ? null : sheet.id)}
-                onDelete={() => handleDelete(sheet.id)}
+            {groups.map((group: Group, idx: number) => (
+              <GroupCard
+                key={group.id}
+                group={group}
+                menuOpen={menuOpen === group.id}
+                onOpen={() => router.push(`/groups/${group.id}`)}
+                onMenuToggle={() =>
+                  setMenuOpen(menuOpen === group.id ? null : group.id)
+                }
+                onDelete={() => handleDelete(group.id)}
                 style={{ animationDelay: `${idx * 0.04}s` }}
               />
             ))}
           </div>
         )}
       </div>
+
+      <CreateGroupModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
     </AppShell>
   );
 }
 
-function InvoiceCard({ invoice, menuOpen, onOpen, onMenuToggle, onDelete, style }: {
-  invoice: InvoiceSummary;
+function GroupCard({
+  group,
+  menuOpen,
+  onOpen,
+  onMenuToggle,
+  onDelete,
+  style,
+}: {
+  group: Group;
   menuOpen: boolean;
   onOpen: () => void;
   onMenuToggle: () => void;
   onDelete: () => void;
   style?: React.CSSProperties;
 }) {
+  const visibleCols = group.columns?.slice(0, 3) ?? [];
+  const extraCount = (group.columns?.length ?? 0) - visibleCols.length;
+
   return (
     <div
       className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group relative"
@@ -152,7 +217,7 @@ function InvoiceCard({ invoice, menuOpen, onOpen, onMenuToggle, onDelete, style 
     >
       <div className="flex items-start justify-between mb-4">
         <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-          <Icon name="table" size={20} stroke={1.75} />
+          <Icon name="folder" size={20} stroke={1.75} />
         </div>
         <div className="relative" onClick={(e) => e.stopPropagation()}>
           <button
@@ -163,22 +228,52 @@ function InvoiceCard({ invoice, menuOpen, onOpen, onMenuToggle, onDelete, style 
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg z-10 overflow-hidden">
-              <button onClick={onOpen} className="w-full text-left px-3 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 transition-colors">Open</button>
-              <button onClick={onDelete} className="w-full text-left px-3 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors">Delete</button>
+              <button
+                onClick={onOpen}
+                className="w-full text-left px-3 py-2.5 text-[13px] text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Open
+              </button>
+              <button
+                onClick={onDelete}
+                className="w-full text-left px-3 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition-colors"
+              >
+                Delete
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      <h3 className="font-bold text-[14px] text-slate-900 tracking-tight mb-1 truncate">{invoice.name}</h3>
-      <p className="text-[12px] text-slate-400 line-clamp-2 min-h-[16px]">{invoice.description ?? ""}</p>
+      <h3 className="font-bold text-[14px] text-slate-900 tracking-tight mb-3 truncate">
+        {group.name}
+      </h3>
 
-      <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100">
-        <span className="flex items-center gap-1 text-[11px] text-slate-400">
-          <Icon name="rows" size={11} />{invoice.rowCount} rows
-        </span>
-        <span className="flex items-center gap-1 text-[11px] text-slate-400">
-          <Icon name="calendar" size={11} />{invoice.updatedAt}
+      {visibleCols.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {visibleCols.map((col) => (
+            <span
+              key={col}
+              className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[11px] rounded-full truncate max-w-[90px]"
+            >
+              {col}
+            </span>
+          ))}
+          {extraCount > 0 && (
+            <span className="px-2 py-0.5 bg-slate-100 text-slate-400 text-[11px] rounded-full">
+              +{extraCount} more
+            </span>
+          )}
+        </div>
+      ) : (
+        <p className="text-[12px] text-slate-400">No columns defined</p>
+      )}
+
+      <div className="flex items-center gap-1 mt-4 pt-4 border-t border-slate-100">
+        <Icon name="columns" size={11} className="text-slate-400" />
+        <span className="text-[11px] text-slate-400">
+          {group.columns?.length ?? 0} column
+          {(group.columns?.length ?? 0) !== 1 ? "s" : ""}
         </span>
       </div>
     </div>
