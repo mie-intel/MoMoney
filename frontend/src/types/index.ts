@@ -65,3 +65,10 @@ export interface Group {
   owner_id: number;
   columns: string[];
 }
+
+export interface Group {
+  id: number;
+  name: string;
+  owner_id: number;
+  columns: string[];
+}
